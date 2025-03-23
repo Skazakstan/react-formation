@@ -1,0 +1,11 @@
+/* @import "tailwindcss";
+
+.container {
+  @apply p-[20px] bg-black;
+}
+.list {
+  @apply flex justify-center items-center gap-5;
+}
+.listItem {
+  @apply text-white hover:text-blue-600;
+} */
