@@ -1,11 +1,25 @@
-/* @import "tailwindcss";
+@reference "../globals.css"; /* Reference global styles */
 
 .container {
-  @apply p-[20px] bg-black;
+  @apply p-5 bg-black;
 }
+
 .list {
   @apply flex justify-center items-center gap-5;
+  /* display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px; */
 }
+
 .listItem {
   @apply text-white hover:text-blue-600;
-} */
+  /* color: white;
+  &:hover {
+    color: blue;
+  } */
+}
+
+.authList {
+  @apply absolute left-0 mt-2 w-48 bg-black rounded-md shadow-lg py-2 z-10;
+}

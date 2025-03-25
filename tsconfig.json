@@ -20,6 +20,7 @@
     ],
     "paths": {
       "@/*": ["./src/*"],
+      "@public": ["./public/*"],
       "@definitions": ["./src/common/definitions/index.ts"]
     }
   },
