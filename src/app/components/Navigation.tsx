@@ -2,7 +2,6 @@
 import styles from "../styles/components/navigation.module.css";
 import Link from "next/link";
 import { useState } from "react";
-import Image from "next/image";
 
 // module CSS to scope locally with styles
 function Navigation() {
