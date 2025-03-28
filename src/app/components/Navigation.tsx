@@ -17,6 +17,7 @@ function Navigation() {
     { href: "/docs", name: "Docs" },
     { href: "/shop", name: "Shop" },
     { href: "/portfolio", name: "Portfolio" },
+    { href: "/order_product", name: "Order" },
   ];
   const authNavLinks = [
     { href: "/login", name: "Login" },
