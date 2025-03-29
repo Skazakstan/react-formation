@@ -1,5 +1,10 @@
 resource "aws_s3_bucket" "app_bucket" {
-  bucket = "${var.project_name}-${var.environment}-app-bucket"
+  bucket = "${var.environment}-${var.project_name}-app-bucket"
+  
+  tags = {
+    Name        = "${var.environment}-app-bucket"
+    Environment = var.environment
+  }
 }
 
 resource "aws_s3_bucket_versioning" "app_bucket_versioning" {
@@ -10,4 +15,15 @@ resource "aws_s3_bucket_versioning" "app_bucket_versioning" {
   }
 }
 
-# Autres ressources selon vos besoins... 
+# Commentaires pour les futures ressources:
+# Préfixez toujours les nouvelles ressources avec ${var.environment}-
+# Exemples:
+# - "${var.environment}-lambda-function"
+# - "${var.environment}-dynamodb-table"
+# - "${var.environment}-app-role"
+#
+# Et ajoutez systématiquement des tags d'environnement:
+# tags = {
+#   Name        = "${var.environment}-ressource-name"
+#   Environment = var.environment
+# } 

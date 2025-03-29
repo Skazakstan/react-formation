@@ -14,28 +14,34 @@ Ce projet utilise Terraform pour déployer l'infrastructure, avec stockage d'ét
 terraform/
 ├── backend.tf                 # Configuration du backend S3
 ├── provider.tf                # Configuration des providers
+├── main.tf                    # Ressources principales
 ├── variables.tf               # Variables globales
-├── setup-remote-state.sh      # Script pour créer le bucket S3
-├── environments/              # Environnements spécifiques
-│   ├── dev/                   # Environnement de développement
-│   │   └── main.tf            # Configuration dev
-│   └── prod/                  # Environnement de production
-└── modules/                   # Modules Terraform réutilisables
-    └── infrastructure/        # Module infrastructure
-        ├── main.tf            # Ressources
-        ├── variables.tf       # Variables du module
-        └── outputs.tf         # Outputs du module
+├── terraform.tfvars           # Valeurs par défaut des variables
+├── outputs.tf                 # Outputs Terraform
+└── setup-remote-state.sh      # Script pour créer le bucket S3
 .github/
 └── workflows/
     └── terraform-deploy.yml   # Workflow GitHub Actions
 ```
 
+## Préfixage des ressources
+
+Toutes les ressources sont préfixées avec l'environnement (`dev-`, `prod-`), ce qui permet:
+
+- D'éviter les conflits de noms entre environnements
+- D'identifier facilement à quel environnement appartient une ressource
+- De gérer différents niveaux d'accès par environnement
+
 ## Configuration initiale
 
-1. Exécuter le script de configuration du stockage distant :
+1. Exécuter le script de configuration du stockage distant pour l'environnement souhaité:
 
    ```bash
+   # Pour l'environnement dev (par défaut)
    ./terraform/setup-remote-state.sh
+
+   # Pour l'environnement prod
+   ./terraform/setup-remote-state.sh prod
    ```
 
 2. Configurer les secrets GitHub :
@@ -45,15 +51,25 @@ terraform/
 ## Déploiement manuel
 
 ```bash
-cd terraform/environments/dev
+cd terraform
+
+# Pour l'environnement dev (par défaut)
 terraform init
 terraform plan
 terraform apply
+
+# Pour l'environnement prod
+terraform init
+terraform plan -var="environment=prod"
+terraform apply -var="environment=prod"
 ```
 
 ## Déploiement automatisé
 
-Le déploiement est automatiquement déclenché par les push sur la branche `main` ou les pull requests.
+Le déploiement est automatiquement déclenché par:
+
+- **Push sur main**: déploie en environnement **prod**
+- **Pull Request**: planifie un déploiement en environnement **dev**
 
 ## Notes importantes
 

@@ -1,6 +1,6 @@
 module "infrastructure" {
   source = "../../modules/infrastructure"
 
-  environment  = "dev"
+  environment  = "prod"
   project_name = var.project_name
 } 
