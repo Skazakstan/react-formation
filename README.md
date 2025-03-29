@@ -72,7 +72,8 @@ terraform apply -var="environment=prod"
 Le déploiement est automatiquement déclenché par:
 
 - **Push sur main**: déploie en environnement **prod**
-- **Pull Request**: planifie un déploiement en environnement **dev**
+- **Pull Request**:
+  nt **dev**
 
 Le workflow utilise l'authentification OIDC avec AWS, éliminant le besoin de stocker des secrets AWS à long terme.
 

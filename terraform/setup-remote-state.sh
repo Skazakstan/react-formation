@@ -2,9 +2,9 @@
 
 # Variables
 ENV=${1:-dev}
-PROJECT_NAME="my-terraform-project"
+PROJECT_NAME="react-formation"
 BUCKET_NAME="${ENV}-${PROJECT_NAME}-terraform-state"
-REGION="eu-west-3"
+REGION="eu-west-1"
 
 echo "Création du bucket S3 pour l'environnement: $ENV"
 

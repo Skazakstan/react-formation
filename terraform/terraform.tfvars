@@ -1,3 +1,3 @@
-aws_region  = "eu-west-3"
+aws_region  = "eu-west-1"
 environment = "dev"
-project_name = "my-terraform-project" 
+project_name = "react-formation" 
