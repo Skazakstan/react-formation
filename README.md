@@ -1,36 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Infrastructure Terraform avec stockage S3
 
-## Getting Started
+Ce projet utilise Terraform pour déployer l'infrastructure, avec stockage d'état sur S3 et déploiement via GitHub Actions.
 
-First, run the development server:
+## Prérequis
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- AWS CLI configuré
+- Terraform v1.5.0+
+- Accès AWS avec les permissions nécessaires
+
+## Structure du projet
+
+```
+terraform/
+├── backend.tf                 # Configuration du backend S3
+├── provider.tf                # Configuration des providers
+├── variables.tf               # Variables globales
+├── setup-remote-state.sh      # Script pour créer le bucket S3
+├── environments/              # Environnements spécifiques
+│   ├── dev/                   # Environnement de développement
+│   │   └── main.tf            # Configuration dev
+│   └── prod/                  # Environnement de production
+└── modules/                   # Modules Terraform réutilisables
+    └── infrastructure/        # Module infrastructure
+        ├── main.tf            # Ressources
+        ├── variables.tf       # Variables du module
+        └── outputs.tf         # Outputs du module
+.github/
+└── workflows/
+    └── terraform-deploy.yml   # Workflow GitHub Actions
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Configuration initiale
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Exécuter le script de configuration du stockage distant :
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+   ```bash
+   ./terraform/setup-remote-state.sh
+   ```
 
-## Learn More
+2. Configurer les secrets GitHub :
+   - `AWS_ACCESS_KEY_ID`
+   - `AWS_SECRET_ACCESS_KEY`
 
-To learn more about Next.js, take a look at the following resources:
+## Déploiement manuel
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+cd terraform/environments/dev
+terraform init
+terraform plan
+terraform apply
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Déploiement automatisé
 
-## Deploy on Vercel
+Le déploiement est automatiquement déclenché par les push sur la branche `main` ou les pull requests.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Notes importantes
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Le stockage d'état utilise uniquement S3 sans mécanisme de verrouillage (pas de DynamoDB)
+- Attention aux modifications simultanées qui pourraient causer des conflits d'état

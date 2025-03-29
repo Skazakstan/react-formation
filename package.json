@@ -6,7 +6,10 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "export": "next build",
+    "deploy": "npm run export && npm run deploy:aws",
+    "deploy:aws": "aws s3 sync out/ s3://NOM-DE-VOTRE-BUCKET --acl public-read"
   },
   "dependencies": {
     "next": "15.2.3",

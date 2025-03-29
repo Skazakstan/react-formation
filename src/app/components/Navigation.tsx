@@ -1,16 +1,34 @@
 "use client";
-import styles from "../styles/components/navigation.module.css";
+import styles from "@styles/components/navigation.module.css";
+// import styles from "../styles/components/navigation.module.css";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 // module CSS to scope locally with styles
 function Navigation() {
-  const [openAuthMenu, setOpenAuthMenu] = useState(false);
-  console.log("state", { openAuthMenu });
+  const [openAuthMenu, setOpenAuthMenu] = useState<boolean>(false);
+  const authMenuRef = useRef<HTMLUListElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        authMenuRef.current &&
+        !authMenuRef.current.contains(event.target as Node)
+      ) {
+        setOpenAuthMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const toggleAuthMenu = () => {
-    setOpenAuthMenu(openAuthMenu ? false : true);
+    setOpenAuthMenu(!openAuthMenu);
   };
+
   const navLinks = [
     { href: "/", name: "Home" },
     { href: "/about", name: "About" },
@@ -61,7 +79,7 @@ function Navigation() {
           </button>
 
           {openAuthMenu && (
-            <ul className={styles.authList}>
+            <ul ref={authMenuRef} className={styles.authList}>
               {authNavLinks.map((link, index) => {
                 return (
                   <li key={index} className={`px-4 py-2 ${styles.listItem}`}>

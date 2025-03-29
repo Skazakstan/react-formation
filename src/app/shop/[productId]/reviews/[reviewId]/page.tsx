@@ -1,6 +1,19 @@
 import type { TPageParams, TReviewPageParam } from "@definitions";
 import { notFound } from "next/navigation";
 
+export async function generateStaticParams() {
+  // Générer des combinaisons de productId et reviewId pour lesquelles
+  // des pages statiques seront créées
+  return [
+    { productId: "1", reviewId: "1" },
+    { productId: "1", reviewId: "2" },
+    { productId: "2", reviewId: "1" },
+    { productId: "3", reviewId: "1" },
+    { productId: "4", reviewId: "1" },
+    { productId: "5", reviewId: "1" },
+  ];
+}
+
 export default async function Review(
   parameters: TPageParams<TReviewPageParam>
 ) {
