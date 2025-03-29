@@ -8,20 +8,32 @@ on:
     branches:
       - main
 
+# Définition des permissions pour OIDC
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
 jobs:
   terraform:
     name: "Terraform"
     runs-on: ubuntu-latest
     env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_REGION: eu-west-3
+      AWS_REGION: eu-west-1
       TF_WORKING_DIR: terraform
       TF_VAR_environment: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
+      # Configure AWS Credentials avec OIDC
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/github_provider_role
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHubActionsTerraformSession
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
@@ -59,7 +71,7 @@ jobs:
             const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
             #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
             #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
-            #### Terraform Plan (dev) 📖\`${{ steps.plan.outcome }}\`
+            #### Terraform Plan (${process.env.TF_VAR_environment}) 📖\`${{ steps.plan.outcome }}\`
 
             <details><summary>Show Plan</summary>
 

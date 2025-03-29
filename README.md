@@ -1,12 +1,13 @@
 # Infrastructure Terraform avec stockage S3
 
-Ce projet utilise Terraform pour déployer l'infrastructure, avec stockage d'état sur S3 et déploiement via GitHub Actions.
+Ce projet utilise Terraform pour déployer l'infrastructure, avec stockage d'état sur S3 et déploiement via GitHub Actions utilisant OIDC pour l'authentification AWS.
 
 ## Prérequis
 
 - AWS CLI configuré
 - Terraform v1.5.0+
 - Accès AWS avec les permissions nécessaires
+- Configuration OIDC entre GitHub et AWS
 
 ## Structure du projet
 
@@ -22,6 +23,7 @@ terraform/
 .github/
 └── workflows/
     └── terraform-deploy.yml   # Workflow GitHub Actions
+iam-policy-example.tf          # Exemple de configuration IAM pour OIDC
 ```
 
 ## Préfixage des ressources
@@ -34,7 +36,9 @@ Toutes les ressources sont préfixées avec l'environnement (`dev-`, `prod-`), c
 
 ## Configuration initiale
 
-1. Exécuter le script de configuration du stockage distant pour l'environnement souhaité:
+1. Créer le fournisseur OIDC et le rôle IAM en utilisant l'exemple dans `iam-policy-example.tf`
+
+2. Exécuter le script de configuration du stockage distant pour l'environnement souhaité:
 
    ```bash
    # Pour l'environnement dev (par défaut)
@@ -44,9 +48,8 @@ Toutes les ressources sont préfixées avec l'environnement (`dev-`, `prod-`), c
    ./terraform/setup-remote-state.sh prod
    ```
 
-2. Configurer les secrets GitHub :
-   - `AWS_ACCESS_KEY_ID`
-   - `AWS_SECRET_ACCESS_KEY`
+3. Configurer les variables GitHub:
+   - `AWS_ACCOUNT_ID`: ID de votre compte AWS (pour le rôle OIDC)
 
 ## Déploiement manuel
 
@@ -71,7 +74,10 @@ Le déploiement est automatiquement déclenché par:
 - **Push sur main**: déploie en environnement **prod**
 - **Pull Request**: planifie un déploiement en environnement **dev**
 
+Le workflow utilise l'authentification OIDC avec AWS, éliminant le besoin de stocker des secrets AWS à long terme.
+
 ## Notes importantes
 
 - Le stockage d'état utilise uniquement S3 sans mécanisme de verrouillage (pas de DynamoDB)
 - Attention aux modifications simultanées qui pourraient causer des conflits d'état
+- L'authentification OIDC est plus sécurisée que l'utilisation de clés d'accès statiques
