@@ -40,6 +40,22 @@ jobs:
         with:
           terraform_version: 1.5.0
 
+      # Générer dynamiquement le fichier backend.tf
+      - name: Configure Terraform Backend
+        run: |
+          cat > $TF_WORKING_DIR/backend.tf << EOF
+          terraform {
+            backend "s3" {
+              bucket         = "${TF_VAR_environment}-react-formation-terraform-state"
+              key            = "terraform.tfstate"
+              region         = "$AWS_REGION"
+              encrypt        = true
+            }
+          }
+          EOF
+          echo "Backend configuré pour l'environnement: $TF_VAR_environment"
+          cat $TF_WORKING_DIR/backend.tf
+
       - name: Terraform Format
         id: fmt
         run: terraform fmt -check
@@ -91,5 +107,27 @@ jobs:
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        id: apply
         run: terraform apply -var="environment=$TF_VAR_environment" -auto-approve
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      # Déploiement du site Next.js sur S3
+      - name: Build Next.js Site
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          npm ci
+          npm run build:static
+
+      - name: Deploy to S3
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          aws s3 sync ./out/ s3://$(terraform output -raw app_bucket_name)/ --delete
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      # Invalidation du cache CloudFront
+      - name: Invalidate CloudFront Cache
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          DISTRIBUTION_ID=$(terraform output -raw cloudfront_distribution_id)
+          aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
         working-directory: ${{ env.TF_WORKING_DIR }}
