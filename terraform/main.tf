@@ -44,14 +44,14 @@ resource "aws_s3_bucket_policy" "app_bucket_policy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid       = "PublicReadGetObject"
+        Sid       = "AllowCloudFrontOnly"
         Effect    = "Allow"
         Principal = "*"
         Action    = "s3:GetObject"
         Resource  = "${aws_s3_bucket.app_bucket.arn}/*"
         Condition = {
-          IpAddress = {
-            "aws:SourceIp" = var.allowed_ips
+          StringLike = {
+            "aws:Referer" = aws_cloudfront_distribution.app_distribution.domain_name
           }
         }
       }
@@ -65,6 +65,16 @@ resource "aws_s3_bucket_versioning" "app_bucket_versioning" {
   versioning_configuration {
     status = "Enabled"
   }
+}
+
+# Gardé temporairement pour éviter les erreurs de dépendance
+# Sera supprimé lors d'une prochaine application après dissociation complète
+resource "aws_cloudfront_origin_access_control" "app_oac" {
+  name                              = "${var.environment}-${var.project_name}-oac"
+  description                       = "OAC pour l'accès au bucket S3"
+  origin_access_control_origin_type = "s3"
+  signing_behavior                  = "always"
+  signing_protocol                  = "sigv4"
 }
 
 resource "aws_acm_certificate" "app_certificate" {
@@ -256,7 +266,7 @@ resource "aws_cloudfront_origin_request_policy" "app_request_policy" {
   headers_config {
     header_behavior = "whitelist"
     headers {
-      items = ["Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"]
+      items = ["Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers", "Referer"]
     }
   }
 
