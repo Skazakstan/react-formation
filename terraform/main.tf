@@ -25,6 +25,15 @@ resource "aws_s3_bucket" "app_bucket" {
   }
 }
 
+resource "aws_s3_bucket_public_access_block" "app_bucket_public_access" {
+  bucket = aws_s3_bucket.app_bucket.id
+
+  block_public_acls       = false
+  block_public_policy     = false
+  ignore_public_acls      = false
+  restrict_public_buckets = false
+}
+
 resource "aws_s3_bucket_website_configuration" "app_website" {
   bucket = aws_s3_bucket.app_bucket.id
 
@@ -33,27 +42,23 @@ resource "aws_s3_bucket_website_configuration" "app_website" {
   }
 
   error_document {
-    key = "index.html"
+    key = "index.html" # Renvoie vers index.html pour toutes les erreurs (comportement SPA)
   }
 }
 
 resource "aws_s3_bucket_policy" "app_bucket_policy" {
-  bucket = aws_s3_bucket.app_bucket.id
+  bucket     = aws_s3_bucket.app_bucket.id
+  depends_on = [aws_s3_bucket_public_access_block.app_bucket_public_access]
 
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Sid       = "AllowCloudFrontOnly"
+        Sid       = "PublicReadGetObject"
         Effect    = "Allow"
         Principal = "*"
         Action    = "s3:GetObject"
         Resource  = "${aws_s3_bucket.app_bucket.arn}/*"
-        Condition = {
-          StringLike = {
-            "aws:Referer" = aws_cloudfront_distribution.app_distribution.domain_name
-          }
-        }
       }
     ]
   })
