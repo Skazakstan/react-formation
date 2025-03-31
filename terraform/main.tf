@@ -83,12 +83,7 @@ resource "aws_acm_certificate" "app_certificate" {
   validation_method = "DNS"
 
   # Ajouter un nom alternatif pour le domaine www si nécessaire
-  dynamic "subject_alternative_names" {
-    for_each = var.create_root_domain_record && local.is_subdomain ? ["www.${local.parent_domain}"] : []
-    content {
-      name = subject_alternative_names.value
-    }
-  }
+  subject_alternative_names = var.create_root_domain_record && local.is_subdomain ? ["www.${local.parent_domain}"] : []
 
   tags = {
     Name        = "${var.environment}-${var.project_name}-certificate"
@@ -167,18 +162,12 @@ resource "aws_cloudfront_distribution" "app_distribution" {
   price_class         = "PriceClass_100"
   comment             = "${var.environment} ${var.project_name} Distribution"
   
-  # Ajouter les noms de domaines alternatifs
-  dynamic "aliases" {
-    for_each = local.full_domain_name != "" ? (
-      var.create_root_domain_record && local.is_subdomain ? 
-      [local.full_domain_name, "www.${local.parent_domain}"] : 
-      [local.full_domain_name]
-    ) : []
-    
-    content {
-      names = toset(aliases.value)
-    }
-  }
+  # Ajouter les noms de domaines alternatifs (conditionnellement)
+  aliases = local.full_domain_name != "" ? (
+    var.create_root_domain_record && local.is_subdomain ? 
+    [local.full_domain_name, "www.${local.parent_domain}"] : 
+    [local.full_domain_name]
+  ) : []
 
   origin {
     domain_name              = aws_s3_bucket.app_bucket.bucket_regional_domain_name
