@@ -4,21 +4,21 @@ locals {
   parent_domain = var.parent_domain != "" ? var.parent_domain : (
     var.domain_name != "" ? join(".", slice(split(".", var.domain_name), length(split(".", var.domain_name)) - 2, length(split(".", var.domain_name)))) : ""
   )
-  
+
   # Déterminer si le domaine est un sous-domaine ou le domaine racine
   is_subdomain = var.domain_name != "" && var.domain_name != local.parent_domain && var.domain_name != "www.${local.parent_domain}"
 
   # Préfixe du sous-domaine (pour nextjs.example.com, ce serait "nextjs")
   subdomain_prefix = local.is_subdomain ? element(split(".", var.domain_name), 0) : ""
-  
+
   # Nom de domaine complet basé sur l'environnement
-  domain_prefix = var.environment == "prod" ? "" : "${var.environment}-"
+  domain_prefix    = var.environment == "prod" ? "" : "${var.environment}-"
   full_domain_name = var.domain_name != "" ? var.domain_name : "${local.domain_prefix}nextjs.${local.parent_domain}"
 }
 
 resource "aws_s3_bucket" "app_bucket" {
   bucket = "${var.environment}-${var.project_name}-app-bucket"
-  
+
   tags = {
     Name        = "${var.environment}-app-bucket"
     Environment = var.environment
@@ -44,13 +44,13 @@ resource "aws_s3_bucket_policy" "app_bucket_policy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid       = "AllowCloudFrontServicePrincipal"
-        Effect    = "Allow"
+        Sid    = "AllowCloudFrontServicePrincipal"
+        Effect = "Allow"
         Principal = {
           Service = "cloudfront.amazonaws.com"
         }
-        Action    = "s3:GetObject"
-        Resource  = "${aws_s3_bucket.app_bucket.arn}/*"
+        Action   = "s3:GetObject"
+        Resource = "${aws_s3_bucket.app_bucket.arn}/*"
         Condition = {
           StringEquals = {
             "AWS:SourceArn" = aws_cloudfront_distribution.app_distribution.arn
@@ -63,7 +63,7 @@ resource "aws_s3_bucket_policy" "app_bucket_policy" {
 
 resource "aws_s3_bucket_versioning" "app_bucket_versioning" {
   bucket = aws_s3_bucket.app_bucket.id
-  
+
   versioning_configuration {
     status = "Enabled"
   }
@@ -79,6 +79,7 @@ resource "aws_cloudfront_origin_access_control" "app_oac" {
 
 resource "aws_acm_certificate" "app_certificate" {
   count             = local.full_domain_name != "" ? 1 : 0
+  provider          = aws.us_east_1
   domain_name       = local.full_domain_name
   validation_method = "DNS"
 
@@ -97,8 +98,8 @@ resource "aws_acm_certificate" "app_certificate" {
 
 # Récupération de la zone DNS Route53 
 data "aws_route53_zone" "main_domain" {
-  count = local.full_domain_name != "" && var.create_dns_record ? 1 : 0
-  name  = local.parent_domain
+  count        = local.full_domain_name != "" && var.create_dns_record ? 1 : 0
+  name         = local.parent_domain
   private_zone = false
 }
 
@@ -123,6 +124,7 @@ resource "aws_route53_record" "cert_validation" {
 # Attendre la validation du certificat
 resource "aws_acm_certificate_validation" "cert_validation" {
   count                   = local.full_domain_name != "" && var.create_dns_record ? 1 : 0
+  provider                = aws.us_east_1
   certificate_arn         = aws_acm_certificate.app_certificate[0].arn
   validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
 }
@@ -161,11 +163,11 @@ resource "aws_cloudfront_distribution" "app_distribution" {
   default_root_object = "index.html"
   price_class         = "PriceClass_100"
   comment             = "${var.environment} ${var.project_name} Distribution"
-  
+
   # Ajouter les noms de domaines alternatifs (conditionnellement)
   aliases = local.full_domain_name != "" ? (
-    var.create_root_domain_record && local.is_subdomain ? 
-    [local.full_domain_name, "www.${local.parent_domain}"] : 
+    var.create_root_domain_record && local.is_subdomain ?
+    [local.full_domain_name, "www.${local.parent_domain}"] :
     [local.full_domain_name]
   ) : []
 
@@ -180,7 +182,7 @@ resource "aws_cloudfront_distribution" "app_distribution" {
     cached_methods         = ["GET", "HEAD", "OPTIONS"]
     target_origin_id       = "S3-${var.environment}-${var.project_name}"
     viewer_protocol_policy = "redirect-to-https"
-    
+
     cache_policy_id          = aws_cloudfront_cache_policy.app_cache_policy.id
     origin_request_policy_id = aws_cloudfront_origin_request_policy.app_request_policy.id
   }
@@ -250,19 +252,19 @@ resource "aws_cloudfront_cache_policy" "app_cache_policy" {
 resource "aws_cloudfront_origin_request_policy" "app_request_policy" {
   name    = "${var.environment}-${var.project_name}-request-policy"
   comment = "Request policy for ${var.project_name} ${var.environment}"
-  
+
   cookies_config {
     cookie_behavior = "none"
   }
-  
+
   headers_config {
     header_behavior = "whitelist"
     headers {
       items = ["Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"]
     }
   }
-  
+
   query_strings_config {
     query_string_behavior = "all"
   }
-} 
+}
