@@ -6,6 +6,8 @@ Ce projet utilise Terraform pour déployer une application Next.js statique sur 
 
 - AWS CLI configuré
 - Terraform v1.5.0+
+- Yarn 1.22+
+- Node.js 20+
 - Accès AWS avec les permissions nécessaires
 - Configuration OIDC entre GitHub et AWS
 - Une zone hébergée Route53 pour votre domaine
@@ -25,6 +27,50 @@ terraform/
 └── workflows/
     └── terraform-deploy.yml   # Workflow GitHub Actions avec génération dynamique de backend.tf
 ```
+
+## Gestion des dépendances
+
+Ce projet utilise Yarn comme gestionnaire de paquets. Assurez-vous d'utiliser Yarn et non npm pour installer les dépendances et exécuter les scripts :
+
+```bash
+# Installation des dépendances
+yarn install
+
+# Démarrer le serveur de développement
+yarn dev
+
+# Construire pour la production
+yarn build
+```
+
+## Flux de travail Git et déploiement
+
+Le projet suit un workflow Git basé sur les branches suivantes:
+
+```
+main (production) → déploie sur nextjs.stansk.com
+  ↑
+staging (développement) → déploie sur dev-nextjs.stansk.com
+  ↑
+branches de fonctionnalités
+```
+
+### Processus de déploiement
+
+1. **Développement de fonctionnalités**:
+
+   - Créez des branches de fonctionnalités à partir de `staging`
+   - Ouvrez une PR vers `staging` lorsque la fonctionnalité est prête
+   - Les validations Terraform et autres vérifications sont exécutées automatiquement
+
+2. **Déploiement en développement**:
+
+   - Lorsqu'une PR est fusionnée dans `staging`, le workflow déploie automatiquement sur `dev-nextjs.stansk.com`
+   - L'équipe peut tester les nouvelles fonctionnalités dans l'environnement de développement
+
+3. **Promotion en production**:
+   - Lorsque l'environnement de développement est stable, créez une PR de `staging` vers `main`
+   - Après approbation et fusion dans `main`, le workflow déploie automatiquement en production sur `nextjs.stansk.com`
 
 ## Gestion des environnements
 
@@ -80,7 +126,14 @@ Cette configuration Terraform déploie:
    > **Important**: Ce script crée uniquement les buckets S3 pour stocker l'état Terraform. Le fichier `backend.tf` est généré dynamiquement par le pipeline CI/CD.
 
 3. Configurer les variables GitHub:
+
    - `AWS_ACCOUNT_ID`: ID de votre compte AWS (pour le rôle OIDC)
+
+4. Créer la branche `staging`:
+   ```bash
+   git checkout -b staging
+   git push origin staging
+   ```
 
 ## Déploiement manuel
 
@@ -139,7 +192,8 @@ locals {
 Le déploiement est automatiquement déclenché par:
 
 - **Push sur main**: déploie en environnement **prod** sur `nextjs.stansk.com`
-- **Pull Request**: planifie un déploiement en environnement **dev** sur `dev-nextjs.stansk.com`
+- **Push sur staging**: déploie en environnement **dev** sur `dev-nextjs.stansk.com`
+- **Pull Request**: planifie et affiche un plan Terraform sans application
 
 Le workflow utilise l'authentification OIDC avec AWS, éliminant le besoin de stocker des secrets AWS à long terme.
 
