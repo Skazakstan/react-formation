@@ -24,12 +24,12 @@ resource "aws_iam_role" "github_actions_terraform" {
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
           StringEquals = {
-            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+            "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
           }
           StringLike = {
             # Autorise uniquement les workflows de votre repository
             # Format: OWNER/REPO:ref:REF ou OWNER/REPO:environment:NAME
-            "token.actions.githubusercontent.com:sub" = "repo:${var.github_repository}:*"
+            "token.actions.githubusercontent.com:sub": "repo:${var.github_repository}:*"
           }
         }
       }
@@ -109,7 +109,7 @@ resource "aws_iam_role_policy_attachment" "github_actions_terraform_policy" {
 variable "github_repository" {
   type        = string
   description = "GitHub repository format: OWNER/REPO"
-  default     = "your-github-username/your-repo-name"
+  default     = "Skazakstan/react-formation"
 }
 
 variable "project_name" {
