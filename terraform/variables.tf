@@ -38,4 +38,10 @@ variable "create_root_domain_record" {
   description = "Créer également un enregistrement pour le domaine racine (www)"
   type        = bool
   default     = false
-} 
+}
+
+variable "allowed_ips" {
+  description = "Liste des adresses IP autorisées à accéder directement au bucket S3 (laissez vide pour restreindre à CloudFront uniquement)"
+  type        = list(string)
+  default     = [] # "0.0.0.0/0" permet l'accès depuis n'importe où
+}

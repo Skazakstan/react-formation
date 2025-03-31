@@ -33,7 +33,7 @@ resource "aws_s3_bucket_website_configuration" "app_website" {
   }
 
   error_document {
-    key = "404.html"
+    key = "index.html"
   }
 }
 
@@ -44,16 +44,14 @@ resource "aws_s3_bucket_policy" "app_bucket_policy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "AllowCloudFrontServicePrincipal"
-        Effect = "Allow"
-        Principal = {
-          Service = "cloudfront.amazonaws.com"
-        }
-        Action   = "s3:GetObject"
-        Resource = "${aws_s3_bucket.app_bucket.arn}/*"
+        Sid       = "PublicReadGetObject"
+        Effect    = "Allow"
+        Principal = "*"
+        Action    = "s3:GetObject"
+        Resource  = "${aws_s3_bucket.app_bucket.arn}/*"
         Condition = {
-          StringEquals = {
-            "AWS:SourceArn" = aws_cloudfront_distribution.app_distribution.arn
+          IpAddress = {
+            "aws:SourceIp" = var.allowed_ips
           }
         }
       }
@@ -67,14 +65,6 @@ resource "aws_s3_bucket_versioning" "app_bucket_versioning" {
   versioning_configuration {
     status = "Enabled"
   }
-}
-
-resource "aws_cloudfront_origin_access_control" "app_oac" {
-  name                              = "${var.environment}-${var.project_name}-oac"
-  description                       = "OAC pour l'accès au bucket S3"
-  origin_access_control_origin_type = "s3"
-  signing_behavior                  = "always"
-  signing_protocol                  = "sigv4"
 }
 
 resource "aws_acm_certificate" "app_certificate" {
@@ -172,9 +162,15 @@ resource "aws_cloudfront_distribution" "app_distribution" {
   ) : []
 
   origin {
-    domain_name              = aws_s3_bucket.app_bucket.bucket_regional_domain_name
-    origin_id                = "S3-${var.environment}-${var.project_name}"
-    origin_access_control_id = aws_cloudfront_origin_access_control.app_oac.id
+    domain_name = aws_s3_bucket_website_configuration.app_website.website_endpoint
+    origin_id   = "S3-${var.environment}-${var.project_name}"
+
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "http-only" # L'endpoint de site web S3 ne supporte que HTTP
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
   }
 
   default_cache_behavior {
