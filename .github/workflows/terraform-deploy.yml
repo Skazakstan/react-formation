@@ -48,7 +48,7 @@ jobs:
           cat > $TF_WORKING_DIR/backend.tf << EOF
           terraform {
             backend "s3" {
-              bucket         = "${TF_VAR_environment}-react-formation-terraform-state"
+              bucket         = "${TF_VAR_environment}-nextjs-formation-terraform-state"
               key            = "terraform.tfstate"
               region         = "$AWS_REGION"
               encrypt        = true

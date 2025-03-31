@@ -7,7 +7,7 @@
 
 # Variables
 ENV=${1:-dev}
-PROJECT_NAME="react-formation"
+PROJECT_NAME="nextjs-formation"
 BUCKET_NAME="${ENV}-${PROJECT_NAME}-terraform-state"
 REGION="eu-west-1"
 

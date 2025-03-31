@@ -78,7 +78,7 @@ Cette configuration supporte plusieurs environnements (dev, prod) avec:
 
 1. **Séparation complète des états**:
 
-   - Chaque environnement a son propre bucket d'état: `dev-react-formation-terraform-state` et `prod-react-formation-terraform-state`
+   - Chaque environnement a son propre bucket d'état: `dev-nextjs-formation-terraform-state` et `prod-nextjs-formation-terraform-state`
    - Le fichier `backend.tf` est généré dynamiquement par le pipeline CI/CD
    - Les pull requests utilisent l'environnement `dev`
    - Les pushes sur `main` utilisent l'environnement `prod`
@@ -145,7 +145,7 @@ cd terraform
 # Pour l'environnement dev
 echo 'terraform {
   backend "s3" {
-    bucket         = "dev-react-formation-terraform-state"
+    bucket         = "dev-nextjs-formation-terraform-state"
     key            = "terraform.tfstate"
     region         = "eu-west-1"
     encrypt        = true
@@ -159,7 +159,7 @@ terraform apply -var="environment=dev"
 # Pour l'environnement prod
 echo 'terraform {
   backend "s3" {
-    bucket         = "prod-react-formation-terraform-state"
+    bucket         = "prod-nextjs-formation-terraform-state"
     key            = "terraform.tfstate"
     region         = "eu-west-1"
     encrypt        = true
