@@ -13,7 +13,7 @@ variable "environment" {
 variable "project_name" {
   description = "Nom du projet"
   type        = string
-  default     = "react-formation"
+  default     = "nextjs-formation"
 }
 
 variable "domain_name" {
