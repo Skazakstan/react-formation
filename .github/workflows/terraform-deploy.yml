@@ -125,7 +125,7 @@ jobs:
         if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging') && github.event_name == 'push'
         run: |
           yarn install
-          yarn build:static
+          yarn build
 
       - name: Deploy to S3
         if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging') && github.event_name == 'push'
