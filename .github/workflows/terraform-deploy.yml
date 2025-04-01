@@ -113,6 +113,15 @@ jobs:
         run: terraform apply -var="environment=$TF_VAR_environment" -auto-approve
         working-directory: ${{ env.TF_WORKING_DIR }}
 
+      # Récupérer les outputs Terraform
+      - name: Récupérer les outputs Terraform
+        if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging') && github.event_name == 'push'
+        id: terraform-output
+        run: |
+          echo "bucket_name=$(terraform output -raw app_bucket_name)" >> $GITHUB_OUTPUT
+          echo "distribution_id=$(terraform output -raw cloudfront_distribution_id)" >> $GITHUB_OUTPUT
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
       # Déploiement du site Next.js sur S3
       - name: Setup Node.js
         if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging') && github.event_name == 'push'
@@ -130,13 +139,12 @@ jobs:
       - name: Deploy to S3
         if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging') && github.event_name == 'push'
         run: |
-          aws s3 sync ./out/ s3://$(terraform output -raw app_bucket_name)/ --delete
-        working-directory: ${{ env.TF_WORKING_DIR }}
+          echo "Synchronisation vers s3://${{ steps.terraform-output.outputs.bucket_name }}/"
+          aws s3 sync ./out/ "s3://${{ steps.terraform-output.outputs.bucket_name }}/" --delete
 
       # Invalidation du cache CloudFront
       - name: Invalidate CloudFront Cache
         if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging') && github.event_name == 'push'
         run: |
-          DISTRIBUTION_ID=$(terraform output -raw cloudfront_distribution_id)
-          aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
-        working-directory: ${{ env.TF_WORKING_DIR }}
+          echo "Création de l'invalidation pour la distribution ${{ steps.terraform-output.outputs.distribution_id }}"
+          aws cloudfront create-invalidation --distribution-id "${{ steps.terraform-output.outputs.distribution_id }}" --paths "/*"
