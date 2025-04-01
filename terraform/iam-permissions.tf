@@ -71,7 +71,7 @@ locals {
           "cloudfront:CreateOriginRequestPolicy",
           "cloudfront:GetOriginRequestPolicy",
           "cloudfront:UpdateOriginRequestPolicy",
-          "cloudfront:DeleteOriginRequestPolicy", 
+          "cloudfront:DeleteOriginRequestPolicy",
           "cloudfront:CreateOriginAccessControl",
           "cloudfront:GetOriginAccessControl",
           "cloudfront:UpdateOriginAccessControl",

@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - main
+      - staging
   pull_request:
     branches:
       - main
+      - staging
 
 # Définition des permissions pour OIDC
 permissions:
@@ -21,7 +23,7 @@ jobs:
     env:
       AWS_REGION: eu-west-1
       TF_WORKING_DIR: terraform
-      TF_VAR_environment: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
+      TF_VAR_environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
 
     steps:
       - name: Checkout
@@ -39,6 +41,7 @@ jobs:
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.5.0
+          terraform_wrapper: false
 
       # Générer dynamiquement le fichier backend.tf
       - name: Configure Terraform Backend
@@ -46,7 +49,7 @@ jobs:
           cat > $TF_WORKING_DIR/backend.tf << EOF
           terraform {
             backend "s3" {
-              bucket         = "${TF_VAR_environment}-react-formation-terraform-state"
+              bucket         = "${TF_VAR_environment}-nextjs-formation-terraform-state"
               key            = "terraform.tfstate"
               region         = "$AWS_REGION"
               encrypt        = true
@@ -106,28 +109,43 @@ jobs:
             })
 
       - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging') && github.event_name == 'push'
         id: apply
         run: terraform apply -var="environment=$TF_VAR_environment" -auto-approve
         working-directory: ${{ env.TF_WORKING_DIR }}
 
-      # Déploiement du site Next.js sur S3
-      - name: Build Next.js Site
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      # Récupérer les outputs Terraform
+      - name: Récupérer les outputs Terraform
+        if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging') && github.event_name == 'push'
+        id: terraform-output
         run: |
-          npm ci
-          npm run build:static
+          echo "bucket_name=$(terraform output -raw app_bucket_name)" >> $GITHUB_OUTPUT
+          echo "distribution_id=$(terraform output -raw cloudfront_distribution_id)" >> $GITHUB_OUTPUT
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      # Déploiement du site Next.js sur S3
+      - name: Setup Node.js
+        if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging') && github.event_name == 'push'
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20"
+          cache: "yarn"
+
+      - name: Build Next.js Site
+        if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging') && github.event_name == 'push'
+        run: |
+          yarn install
+          yarn build
 
       - name: Deploy to S3
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging') && github.event_name == 'push'
         run: |
-          aws s3 sync ./out/ s3://$(terraform output -raw app_bucket_name)/ --delete
-        working-directory: ${{ env.TF_WORKING_DIR }}
+          echo "Synchronisation vers s3://${{ steps.terraform-output.outputs.bucket_name }}/"
+          aws s3 sync ./out/ "s3://${{ steps.terraform-output.outputs.bucket_name }}/" --delete
 
       # Invalidation du cache CloudFront
       - name: Invalidate CloudFront Cache
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging') && github.event_name == 'push'
         run: |
-          DISTRIBUTION_ID=$(terraform output -raw cloudfront_distribution_id)
-          aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
-        working-directory: ${{ env.TF_WORKING_DIR }}
+          echo "Création de l'invalidation pour la distribution ${{ steps.terraform-output.outputs.distribution_id }}"
+          aws cloudfront create-invalidation --distribution-id "${{ steps.terraform-output.outputs.distribution_id }}" --paths "/*"

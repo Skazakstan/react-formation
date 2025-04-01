@@ -109,11 +109,11 @@ resource "aws_iam_role_policy_attachment" "github_actions_terraform_policy" {
 variable "github_repository" {
   type        = string
   description = "GitHub repository format: OWNER/REPO"
-  default     = "Skazakstan/react-formation"
+  default     = "Skazakstan/nextjs-formation"
 }
 
 variable "project_name" {
   type        = string
-  description = "Nom du projet"
-  default     = "my-terraform-project"
+  description = "nextjs-formation"
+  default     = "nextjs-formation"
 } 

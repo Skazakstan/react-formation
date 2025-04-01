@@ -1,5 +1,5 @@
 {
-  "name": "react-formation-project",
+  "name": "nextjs-formation-project",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -7,10 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "export": "next export",
     "build:static": "next build && next export",
-    "deploy": "npm run export && npm run deploy:aws",
-    "deploy:aws": "aws s3 sync out/ s3://dev-react-formation-app-bucket --acl public-read"
+    "deploy": "yarn export && yarn deploy:aws",
+    "deploy:aws": "aws s3 sync out/ s3://dev-nextjs-formation-app-bucket --acl public-read"
   },
   "dependencies": {
     "next": "15.2.3",
